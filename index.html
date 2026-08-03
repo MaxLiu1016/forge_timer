@@ -9,7 +9,10 @@
 <meta name="theme-color" content="#0b0f14">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- 不要用 black-translucent：iOS 會把 webview 高度扣掉狀態列、位置卻仍從 y=0 起算，
+     導致螢幕底部露出一條約 59px 的空白。改用 default 讓系統正常把 webview 排在狀態列下方，
+     狀態列底色會吃 theme-color。 -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="FORGE">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
