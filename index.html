@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>FORGE 鍛 — 間歇訓練計時器</title>
+<meta name="description" content="把自己鍛成形。可自訂動作的 HIIT / 間歇訓練計時器">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FORGE">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-phase="idle">
+
+<div class="app">
+  <!-- ===================== 計時 ===================== -->
+  <section class="view is-active" id="view-timer">
+    <header class="topbar">
+      <button class="chip chip-btn" id="workout-switch" aria-label="切換課表">
+        <span id="workout-name">課表</span>
+        <svg viewBox="0 0 24 24" class="ico"><path d="M7 10l5 5 5-5"/></svg>
+      </button>
+      <div class="chip chip-ghost" id="round-pill">—</div>
+    </header>
+
+    <div class="stage" id="stage">
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
+          <circle class="ring-track" cx="100" cy="100" r="88"></circle>
+          <circle class="ring-bar" id="ring-bar" cx="100" cy="100" r="88"></circle>
+        </svg>
+        <div class="ring-inner">
+          <div class="phase-label" id="phase-label">準備</div>
+          <div class="big-time" id="seg-time">00</div>
+          <div class="ex-name" id="ex-name">—</div>
+        </div>
+      </div>
+
+      <p class="ex-desc" id="ex-desc"></p>
+
+      <div class="next-up" id="next-up" hidden>
+        <span class="next-tag">接下來</span>
+        <span id="next-text"></span>
+      </div>
+    </div>
+
+    <div class="totals">
+      <div class="totals-row">
+        <span class="t-label">總進度</span>
+        <span class="t-value"><b id="total-elapsed">00:00</b> / <span id="total-all">00:00</span></span>
+      </div>
+      <div class="track"><div class="track-fill" id="total-fill"></div></div>
+      <div class="totals-row sub">
+        <span id="seg-count">—</span>
+        <span>剩餘 <b id="total-left">00:00</b></span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="ctl" id="btn-reset" aria-label="重設">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
+      </button>
+      <button class="ctl" id="btn-prev" aria-label="上一段">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M18 5v14L8 12l10-7zM6 5v14"/></svg>
+      </button>
+      <button class="ctl ctl-main" id="btn-play" aria-label="開始或暫停">
+        <svg viewBox="0 0 24 24" class="ico ico-play"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg>
+        <svg viewBox="0 0 24 24" class="ico ico-pause"><path d="M9 5v14M15 5v14"/></svg>
+      </button>
+      <button class="ctl" id="btn-next" aria-label="下一段">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M6 5v14l10-7L6 5zM18 5v14"/></svg>
+      </button>
+      <button class="ctl" id="btn-list" aria-label="流程總覽">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ===================== 編輯（後台） ===================== -->
+  <section class="view" id="view-edit">
+    <header class="topbar">
+      <h1 class="title">課表編輯</h1>
+      <button class="btn btn-sm" id="btn-add-workout">＋ 新課表</button>
+    </header>
+    <div class="scroll" id="edit-scroll">
+      <div class="field-row">
+        <label class="field grow">
+          <span>目前編輯</span>
+          <select id="edit-workout-select"></select>
+        </label>
+      </div>
+
+      <div class="card">
+        <label class="field">
+          <span>課表名稱</span>
+          <input type="text" id="f-name" maxlength="24" placeholder="例：晨間 HIIT">
+        </label>
+        <div class="grid-2">
+          <label class="field">
+            <span>準備秒數</span>
+            <input type="number" id="f-prepare" min="0" max="600" inputmode="numeric">
+          </label>
+          <label class="field">
+            <span>重複輪數</span>
+            <input type="number" id="f-rounds" min="1" max="99" inputmode="numeric">
+          </label>
+          <label class="field">
+            <span>輪間休息（秒）</span>
+            <input type="number" id="f-roundrest" min="0" max="900" inputmode="numeric">
+          </label>
+          <label class="field field-switch">
+            <span>略過每輪最後休息</span>
+            <input type="checkbox" id="f-skiplast" class="switch">
+          </label>
+        </div>
+        <div class="summary" id="edit-summary">—</div>
+        <div class="card-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-dup-workout">複製課表</button>
+          <button class="btn btn-danger btn-sm" id="btn-del-workout">刪除課表</button>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>動作清單</h2>
+        <span class="muted" id="ex-count"></span>
+      </div>
+      <div id="ex-list" class="ex-list"></div>
+      <button class="btn btn-block" id="btn-add-ex">＋ 新增動作</button>
+      <div class="spacer"></div>
+    </div>
+  </section>
+
+  <!-- ===================== 設定 ===================== -->
+  <section class="view" id="view-settings">
+    <header class="topbar"><h1 class="title">設定</h1></header>
+    <div class="scroll">
+      <div class="card">
+        <label class="field field-switch"><span>嗶聲提示</span><input type="checkbox" id="p-sound" class="switch"></label>
+        <label class="field field-switch"><span>震動提示</span><input type="checkbox" id="p-vibrate" class="switch"></label>
+        <label class="field field-switch"><span>語音報動作</span><input type="checkbox" id="p-voice" class="switch"></label>
+        <label class="field field-switch"><span>運動中螢幕恆亮</span><input type="checkbox" id="p-wake" class="switch"></label>
+        <label class="field field-switch"><span>淺色主題</span><input type="checkbox" id="p-light" class="switch"></label>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">資料</h2>
+        <p class="muted small">課表存在這台裝置的瀏覽器裡。換手機前可以先匯出。</p>
+        <div class="card-actions wrap">
+          <button class="btn btn-sm" id="btn-export">匯出 JSON</button>
+          <button class="btn btn-sm" id="btn-import">匯入 JSON</button>
+          <button class="btn btn-danger btn-sm" id="btn-reset-all">回復預設</button>
+        </div>
+        <input type="file" id="file-import" accept="application/json,.json" hidden>
+      </div>
+
+      <div class="card" id="install-card" hidden>
+        <h2 class="card-title">安裝到主畫面</h2>
+        <p class="muted small">裝起來就跟一般 App 一樣全螢幕，離線也能用。</p>
+        <button class="btn btn-block" id="btn-install">立即安裝</button>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">關於</h2>
+        <p class="muted small"><b>FORGE 鍛</b> · 間歇訓練計時器 PWA<br>把自己鍛成形<br>離線可用 · 資料不外傳</p>
+      </div>
+      <div class="spacer"></div>
+    </div>
+  </section>
+
+  <!-- ===================== 底部分頁 ===================== -->
+  <nav class="tabbar">
+    <button class="tab is-active" data-view="timer">
+      <svg viewBox="0 0 24 24" class="ico"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
+      <span>計時</span>
+    </button>
+    <button class="tab" data-view="edit">
+      <svg viewBox="0 0 24 24" class="ico"><path d="M4 6h10M4 12h16M4 18h7"/><path d="M17.5 15.5l3 3-4 1 1-4z"/></svg>
+      <span>課表</span>
+    </button>
+    <button class="tab" data-view="settings">
+      <svg viewBox="0 0 24 24" class="ico"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg>
+      <span>設定</span>
+    </button>
+  </nav>
+</div>
+
+<!-- 流程總覽 -->
+<div class="sheet" id="sheet-timeline" hidden>
+  <div class="sheet-backdrop" data-close></div>
+  <div class="sheet-panel">
+    <div class="sheet-grip"></div>
+    <h2 class="sheet-title">流程總覽</h2>
+    <div class="sheet-body" id="timeline-list"></div>
+  </div>
+</div>
+
+<!-- 課表切換 -->
+<div class="sheet" id="sheet-workouts" hidden>
+  <div class="sheet-backdrop" data-close></div>
+  <div class="sheet-panel">
+    <div class="sheet-grip"></div>
+    <h2 class="sheet-title">選擇課表</h2>
+    <div class="sheet-body" id="workout-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

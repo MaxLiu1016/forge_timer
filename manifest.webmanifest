@@ -1,0 +1,24 @@
+{
+  "name": "FORGE 鍛 — 間歇訓練計時器",
+  "short_name": "FORGE",
+  "description": "把自己鍛成形。可自訂動作的 HIIT / 間歇訓練計時器，離線可用。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen"],
+  "orientation": "portrait",
+  "background_color": "#0b0f14",
+  "theme_color": "#0b0f14",
+  "lang": "zh-Hant-TW",
+  "dir": "ltr",
+  "categories": ["health", "fitness", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "開始計時", "url": "./index.html#timer" },
+    { "name": "編輯課表", "url": "./index.html#edit" }
+  ]
+}

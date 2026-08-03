@@ -1,0 +1,13 @@
+{
+  "name": "forge-timer-pwa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FORGE 鍛 — 可自訂動作的 HIIT / 間歇訓練計時器 PWA（無框架、零相依）",
+  "type": "module",
+  "scripts": {
+    "start": "node serve.mjs",
+    "dev": "node serve.mjs",
+    "icons": "node tools/icons-from-source.mjs",
+    "icons:procedural": "node tools/make-icons.mjs"
+  }
+}
