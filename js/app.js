@@ -56,12 +56,37 @@ editorUI.render();
 // 方便在 DevTools 裡直接操作／除錯
 window.__forge = { engine, store, go: (v) => go(v) };
 
+// ---------- 版面診斷（問題解掉就可以拿掉） ----------
+function renderDiag() {
+  const el = $('#diag');
+  if (!el) return;
+  const app = $('.app').getBoundingClientRect();
+  const bar = $('.tabbar').getBoundingClientRect();
+  const rs = getComputedStyle(document.documentElement);
+  const cs = getComputedStyle($('.tabbar'));
+  const r = (n) => Math.round(n);
+  el.textContent = [
+    `win    ${innerWidth}x${innerHeight}  dpr ${devicePixelRatio}`,
+    `screen ${screen.width}x${screen.height}  avail ${screen.availHeight}`,
+    `visual ${r(visualViewport?.width || 0)}x${r(visualViewport?.height || 0)}`,
+    `app    top ${r(app.top)} bottom ${r(app.bottom)} h ${r(app.height)}`,
+    `tabbar top ${r(bar.top)} bottom ${r(bar.bottom)} h ${r(bar.height)}`,
+    `GAP    ${r(innerHeight - bar.bottom)}   position ${getComputedStyle($('.app')).position}`,
+    `safe   t"${rs.getPropertyValue('--safe-t').trim()}" b"${rs.getPropertyValue('--safe-b').trim()}"`,
+    `barPad ${cs.paddingBottom}  barH ${cs.height}`,
+    `SA     mq ${matchMedia('(display-mode: standalone)').matches} nav ${navigator.standalone} cls ${document.documentElement.classList.contains('is-standalone')}`,
+  ].join('\n');
+}
+addEventListener('resize', renderDiag);
+addEventListener('orientationchange', () => setTimeout(renderDiag, 300));
+
 // ---------- 分頁路由 ----------
 function go(view) {
   $$('.view').forEach((v) => v.classList.toggle('is-active', v.id === `view-${view}`));
   $$('.tab').forEach((t) => t.classList.toggle('is-active', t.dataset.view === view));
   if (view === 'edit') editorUI.render();
   if (view === 'timer') timerUI.render();
+  if (view === 'settings') requestAnimationFrame(renderDiag);
   location.hash = view;
 }
 $$('.tab').forEach((t) => t.addEventListener('click', () => go(t.dataset.view)));
