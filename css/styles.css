@@ -412,23 +412,6 @@ textarea { resize: vertical; min-height: 44px; line-height: 1.4; }
 .btn-ghost { background: transparent; }
 .btn-danger { color: var(--danger); border-color: color-mix(in oklab, var(--danger) 35%, transparent); background: transparent; }
 
-/* 版面診斷用，問題解掉就可以整塊拿掉 */
-.diag {
-  margin: 0;
-  font-family: ui-monospace, Menlo, Consolas, monospace;
-  font-size: 11px;
-  line-height: 1.6;
-  color: var(--muted);
-  background: var(--bg-soft);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px 10px;
-  white-space: pre-wrap;
-  word-break: break-all;
-  user-select: text;
-  -webkit-user-select: text;
-}
-
 .muted { color: var(--muted); }
 .small { font-size: 13px; line-height: 1.6; margin: 0; }
 

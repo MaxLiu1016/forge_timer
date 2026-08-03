@@ -109,10 +109,34 @@ npm run icons
 - **階段色只作用在計時頁**：`#view-timer { --accent: var(--phase, ...) }`，
   後台編輯時介面顏色不會跟著計時器亂跳。
 
+## iOS 主畫面 App 的兩個坑（踩過了，別再踩）
+
+**1. 不要用 `apple-mobile-web-app-status-bar-style="black-translucent"`**
+
+用了之後 iOS 會把 webview 的**高度**扣掉狀態列（59px），**位置卻仍從 y=0 起算**，
+結果螢幕最下緣露出一條約 59px 的空白，怎麼改 CSS 都補不起來（因為那塊在視窗外面）。
+
+當時的診斷數字：`win 393x793` 但 `screen 393x852`，差值 59 正好是 `env(safe-area-inset-top)`。
+App 內部其實完全正常 —— 分頁列確實貼齊視窗底部，只是視窗本身比螢幕矮。
+
+用 `content="default"` 就好，狀態列底色會吃 `theme-color`。
+
+**2. `@media (display-mode: standalone)` 在 iOS 不可靠**
+
+從主畫面啟動時 iOS 不保證讓這條媒體查詢成立，要另外看 `navigator.standalone`。
+`js/app.js` 兩個都檢查，命中就在 `<html>` 掛 `is-standalone` class，CSS 兩條路都寫。
+
+安裝後改用 `position: fixed; inset: 0` 貼死視窗四邊，比任何視窗單位都可靠；
+瀏覽器分頁維持 `100dvh`，因為手機瀏覽器的網址列會收合，那裡反而需要 dvh。
+
 ## 改版後使用者看到舊版？
 
 Service Worker 是「快取優先、背景更新」。改完內容部署後，把 `sw.js` 最上面的
-`VERSION` 加一（`v1` → `v2`），舊快取會在下次啟動時整批換掉。
+`VERSION` 加一，舊快取會在下次啟動時整批換掉。
+
+`js/app.js` 另外監聽 `controllerchange`：新版 SW 搶下控制權時會自動重載一次頁面，
+所以使用者不用「關掉再開兩次」才吃得到新版。（只在已經有 controller 時才掛監聽，
+避免第一次安裝時多重載一輪。）
 
 ## 之後可以加的東西
 
