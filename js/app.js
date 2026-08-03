@@ -18,6 +18,18 @@ function toast(msg) {
   toastTimer = setTimeout(() => (t.hidden = true), 1900);
 }
 
+// ---------- 是否為「已安裝的 App」 ----------
+// iOS 對 display-mode 媒體查詢的支援不一致，從主畫面啟動時舊版會回報 browser，
+// 只有 navigator.standalone 一定準，所以兩個都看。
+function syncStandalone() {
+  const on = matchMedia('(display-mode: standalone)').matches
+    || matchMedia('(display-mode: fullscreen)').matches
+    || navigator.standalone === true;
+  document.documentElement.classList.toggle('is-standalone', on);
+}
+syncStandalone();
+matchMedia('(display-mode: standalone)').addEventListener?.('change', syncStandalone);
+
 // ---------- 主題 ----------
 function applyTheme() {
   document.documentElement.dataset.theme = store.prefs.theme;
@@ -182,6 +194,17 @@ window.addEventListener('appinstalled', () => {
 
 // 開發時在網址加上 ?nosw 可以停用快取，改完直接 F5 就看得到
 if ('serviceWorker' in navigator && !location.search.includes('nosw')) {
+  // 已經有 controller 才掛這個監聽：代表這次不是第一次安裝，
+  // 而是有新版 SW 搶下控制權（sw.js 裡有 skipWaiting + claim）。
+  // 重載一次讓畫面吃到新的 CSS/JS，使用者才不用「關掉再開兩次」。
+  if (navigator.serviceWorker.controller) {
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloading) return;
+      reloading = true;
+      location.reload();
+    });
+  }
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });

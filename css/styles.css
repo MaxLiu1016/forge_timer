@@ -99,12 +99,12 @@ svg.ico {
    離底部幾十 px 的半空中，下面露出一塊空的底色。 */
 @media (display-mode: standalone) {
   html, body { overflow: hidden; }
-  .app {
-    position: fixed;
-    inset: 0;
-    height: auto;
-  }
+  .app { position: fixed; inset: 0; height: auto; }
 }
+/* iOS 從主畫面啟動時不一定會讓上面那條媒體查詢成立，
+   所以 app.js 另外用 navigator.standalone 補判斷、掛上這個 class */
+html.is-standalone, html.is-standalone body { overflow: hidden; }
+html.is-standalone .app { position: fixed; inset: 0; height: auto; }
 
 .view {
   display: none;
