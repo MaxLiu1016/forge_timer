@@ -94,6 +94,18 @@ svg.ico {
   margin: 0 auto;
 }
 
+/* 加到主畫面之後沒有會伸縮的瀏覽器列，直接用 fixed 貼死視窗四邊。
+   iOS standalone 的 100dvh 會算得比螢幕矮，靠 dvh 的話分頁列會浮在
+   離底部幾十 px 的半空中，下面露出一塊空的底色。 */
+@media (display-mode: standalone) {
+  html, body { overflow: hidden; }
+  .app {
+    position: fixed;
+    inset: 0;
+    height: auto;
+  }
+}
+
 .view {
   display: none;
   min-height: 0;
