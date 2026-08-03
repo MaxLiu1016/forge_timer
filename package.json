@@ -4,6 +4,9 @@
   "private": true,
   "description": "FORGE 鍛 — 可自訂動作的 HIIT / 間歇訓練計時器 PWA（無框架、零相依）",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node serve.mjs",
     "dev": "node serve.mjs",
