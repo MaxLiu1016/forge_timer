@@ -145,6 +145,13 @@
     <div class="scroll">
       <div class="card">
         <label class="field field-switch"><span>嗶聲提示</span><input type="checkbox" id="p-sound" class="switch"></label>
+        <div class="field" id="volume-field">
+          <span>音量 <b id="p-volume-val">80%</b></span>
+          <div class="slider-row">
+            <input type="range" id="p-volume" min="0" max="100" step="5" class="slider">
+            <button class="btn btn-sm" id="btn-test-sound">試聽</button>
+          </div>
+        </div>
         <label class="field field-switch"><span>震動提示</span><input type="checkbox" id="p-vibrate" class="switch"></label>
         <label class="field field-switch"><span>語音報動作</span><input type="checkbox" id="p-voice" class="switch"></label>
         <label class="field field-switch"><span>運動中螢幕恆亮</span><input type="checkbox" id="p-wake" class="switch"></label>

@@ -2,6 +2,7 @@
 import { store } from './store.js';
 import { buildTimeline } from './engine.js';
 import { fmt } from './ui-timer.js';
+import { initSortable } from './drag-sort.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -108,144 +109,16 @@ export function initEditorUI({ onWorkoutChanged, toast }) {
   });
 
   // ---- 拖曳排序 ----
-  // 自己用 Pointer Events 做：HTML5 的 draggable 在手機瀏覽器上根本不會觸發。
-  // 只有握把能起始拖曳，卡片其他地方維持「點一下展開」。
-  //
-  // 座標一律換算成「內容座標」= clientY + scrollTop，這樣拖到一半觸發自動捲動時，
-  // 起始時量到的那組 rect 仍然可以直接拿來比對，不用重新量一次。
-  let drag = null;
-
-  function bindGrip(grip, card) {
-    grip.addEventListener('pointerdown', (e) => {
-      if (e.button > 0) return;
-      e.preventDefault();
-      e.stopPropagation();
-      beginDrag(e, grip, card);
-    });
-    grip.addEventListener('pointermove', moveDrag);
-    grip.addEventListener('pointerup', endDrag);
-    grip.addEventListener('pointercancel', endDrag);
-    // 握把上的 click 不要冒泡到 head，否則放開手指卡片會跟著展開／收合
-    grip.addEventListener('click', (e) => e.stopPropagation());
-  }
-
-  function beginDrag(e, grip, card) {
-    if (drag) return;
-    const cards = [...el.list.children];
-    const from = cards.indexOf(card);
-    if (from < 0 || cards.length < 2) return;
-
-    const sc = el.scroll;
-    const rects = cards.map((c) => c.getBoundingClientRect());
-    const gap = rects.length > 1 ? Math.max(0, rects[1].top - rects[0].bottom) : 0;
-
-    drag = {
-      workout: editing(),
-      grip, card, cards, rects, gap, from,
-      to: from,
-      sc,
-      startY: e.clientY + sc.scrollTop,
-      clientY: e.clientY,
-      pointerId: e.pointerId,
-      raf: null,
-      vel: 0,
-    };
-
-    try {
-      grip.setPointerCapture(e.pointerId);
-    } catch {
-      // 沒有作用中的 pointer 就別硬做，不然會卡在「拖曳中」的狀態出不來
-      drag = null;
-      return;
-    }
-    card.classList.add('is-dragging');
-    el.list.classList.add('is-reordering');
-    document.body.classList.add('is-dragging-ex');
-  }
-
-  function moveDrag(e) {
-    if (!drag || e.pointerId !== drag.pointerId) return;
-    e.preventDefault();
-    drag.clientY = e.clientY;
-    layoutDrag();
-    autoScroll();
-  }
-
-  /** 依目前位移算出落點，並把其他卡片讓開 */
-  function layoutDrag() {
-    const { rects, from, gap, sc, card, cards } = drag;
-    const dy = drag.clientY + sc.scrollTop - drag.startY;
-    card.style.transform = `translateY(${dy}px)`;
-
-    const h = rects[from].height;
-    const center = rects[from].top + h / 2 + dy;
-
-    let to = from;
-    for (let i = 0; i < rects.length; i++) {
-      if (i === from) continue;
-      const mid = rects[i].top + rects[i].height / 2;
-      // 越過某張卡片的中線才算換位，避免在邊界上抖動
-      if (i < from && center < mid) to = Math.min(to, i);
-      if (i > from && center > mid) to = Math.max(to, i);
-    }
-    drag.to = to;
-
-    const shift = h + gap;
-    cards.forEach((c, i) => {
-      if (i === from) return;
-      let d = 0;
-      if (to > from && i > from && i <= to) d = -shift;
-      if (to < from && i >= to && i < from) d = shift;
-      c.style.transform = d ? `translateY(${d}px)` : '';
-    });
-  }
-
-  /** 拖到清單上下緣時自動捲動，長課表才拖得動 */
-  function autoScroll() {
-    const { sc } = drag;
-    const r = sc.getBoundingClientRect();
-    const EDGE = 56;
-    let v = 0;
-    if (drag.clientY < r.top + EDGE) v = -Math.ceil((r.top + EDGE - drag.clientY) / 5);
-    else if (drag.clientY > r.bottom - EDGE) v = Math.ceil((drag.clientY - (r.bottom - EDGE)) / 5);
-
-    drag.vel = v;
-    if (!v) return stopAutoScroll();
-    if (drag.raf) return;
-
-    const step = () => {
-      if (!drag || !drag.vel) return;
-      const before = drag.sc.scrollTop;
-      drag.sc.scrollTop = before + drag.vel;
-      if (drag.sc.scrollTop !== before) layoutDrag();
-      drag.raf = requestAnimationFrame(step);
-    };
-    drag.raf = requestAnimationFrame(step);
-  }
-
-  function stopAutoScroll() {
-    if (drag?.raf) {
-      cancelAnimationFrame(drag.raf);
-      drag.raf = null;
-    }
-  }
-
-  function endDrag(e) {
-    if (!drag || (e && e.pointerId !== drag.pointerId)) return;
-    stopAutoScroll();
-
-    const { workout, from, to, cards, card } = drag;
-    cards.forEach((c) => (c.style.transform = ''));
-    card.classList.remove('is-dragging');
-    el.list.classList.remove('is-reordering');
-    document.body.classList.remove('is-dragging-ex');
-    drag = null;
-
-    if (to === from) return;
-    store.moveExercise(workout, from, to);
-    render();
-    commit();
-  }
+  initSortable({
+    list: el.list,
+    scroller: el.scroll,
+    handle: '.sort-grip',
+    onDrop(from, to) {
+      store.moveExercise(editing(), from, to);
+      render();
+      commit();
+    },
+  });
 
   function exCard(ex, i, w) {
     const card = document.createElement('div');
@@ -254,7 +127,7 @@ export function initEditorUI({ onWorkoutChanged, toast }) {
     const head = document.createElement('div');
     head.className = 'ex-head';
     head.innerHTML = `
-      <div class="ex-grip" aria-label="拖曳調整順序">
+      <div class="sort-grip" aria-label="拖曳調整順序">
         <svg viewBox="0 0 24 24" class="ico"><path d="M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01"/></svg>
       </div>
       <div class="ex-idx">${i + 1}</div>
@@ -268,8 +141,6 @@ export function initEditorUI({ onWorkoutChanged, toast }) {
       const open = card.classList.toggle('is-open');
       open ? openCards.add(ex.id) : openCards.delete(ex.id);
     });
-
-    bindGrip(head.querySelector('.ex-grip'), card);
 
     const body = document.createElement('div');
     body.className = 'ex-body';

@@ -50,6 +50,7 @@ function defaultData() {
 function defaultPrefs() {
   return {
     sound: true,        // 嗶聲提示
+    volume: 80,         // 嗶聲音量 0-100
     vibrate: true,      // 震動提示
     voice: false,       // 語音報動作名稱
     keepAwake: true,    // 螢幕恆亮
@@ -118,6 +119,13 @@ export const store = {
     if (this.data.activeId === id) this.data.activeId = this.data.workouts[0].id;
     this.saveData();
     return true;
+  },
+  moveWorkout(from, to) {
+    const list = this.data.workouts;
+    if (from === to || to < 0 || to >= list.length || from < 0 || from >= list.length) return;
+    const [item] = list.splice(from, 1);
+    list.splice(to, 0, item);
+    this.saveData();
   },
   addExercise(workout) {
     const last = workout.exercises[workout.exercises.length - 1];

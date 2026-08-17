@@ -385,6 +385,48 @@ textarea { resize: vertical; min-height: 44px; line-height: 1.4; }
 .switch:checked { background: var(--accent); }
 .switch:checked::after { transform: translateX(18px); }
 
+/* ---- 音量滑桿 ---- */
+.slider-row { display: flex; align-items: center; gap: 12px; }
+.slider {
+  flex: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  outline: none;
+  margin: 0;
+  padding: 0;
+  touch-action: none;
+}
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,.4);
+  cursor: pointer;
+}
+.slider::-moz-range-thumb {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+#p-volume-val { color: var(--text); font-variant-numeric: tabular-nums; }
+/* 裝置不支援時把開關關掉並說明原因，免得使用者以為是壞掉 */
+.field-switch.is-unsupported { opacity: .55; }
+.field-switch .unsupported-note {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
 .summary {
   font-size: 13px;
   color: var(--muted);
@@ -415,6 +457,37 @@ textarea { resize: vertical; min-height: 44px; line-height: 1.4; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; line-height: 1.6; margin: 0; }
 
+/* ============ 拖曳排序（課表清單、動作清單共用） ============ */
+/* touch-action: none 一定要有，不然手機上一拖就變成捲頁 */
+.sort-grip {
+  flex: none;
+  width: 24px;
+  align-self: stretch;
+  margin: -12px 0 -12px -4px;
+  display: grid; place-items: center;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+}
+.sort-grip .ico { width: 18px; height: 18px; }
+.sort-grip:active { cursor: grabbing; color: var(--accent); }
+
+.sort-rows { display: flex; flex-direction: column; gap: 8px; }
+
+.is-reordering > * { transition: transform .16s cubic-bezier(.2,.9,.3,1); }
+.is-dragging {
+  transition: none !important;
+  position: relative;
+  z-index: 5;
+  border-color: var(--accent);
+  box-shadow: 0 12px 30px rgba(0,0,0,.45);
+}
+.is-dragging .sort-grip { color: var(--accent); }
+/* 拖曳中不要讓瀏覽器順手選字，或把清單交給捲動慣性 */
+body.is-sorting { user-select: none; -webkit-user-select: none; }
+body.is-sorting #edit-scroll,
+body.is-sorting .sheet-body { overscroll-behavior: contain; }
+
 /* ============ 動作清單（編輯） ============ */
 .ex-list { display: flex; flex-direction: column; gap: 10px; }
 
@@ -429,33 +502,6 @@ textarea { resize: vertical; min-height: 44px; line-height: 1.4; }
   padding: 12px 14px;
   cursor: pointer;
 }
-/* 拖曳握把：touch-action: none 一定要有，不然手機上一拖就變成捲頁 */
-.ex-grip {
-  flex: none;
-  width: 24px;
-  align-self: stretch;
-  margin: -12px 0 -12px -4px;
-  display: grid; place-items: center;
-  color: var(--muted);
-  cursor: grab;
-  touch-action: none;
-}
-.ex-grip .ico { width: 18px; height: 18px; }
-.ex-grip:active { cursor: grabbing; color: var(--accent); }
-
-.ex-list.is-reordering .ex-card { transition: transform .16s cubic-bezier(.2,.9,.3,1); }
-.ex-card.is-dragging {
-  transition: none !important;
-  position: relative;
-  z-index: 5;
-  border-color: var(--accent);
-  box-shadow: 0 12px 30px rgba(0,0,0,.45);
-}
-.ex-card.is-dragging .ex-grip { color: var(--accent); }
-/* 拖曳中不要讓瀏覽器順手選字或把清單交給捲動慣性 */
-body.is-dragging-ex { user-select: none; -webkit-user-select: none; }
-body.is-dragging-ex #edit-scroll { overscroll-behavior: contain; }
-
 .ex-idx {
   flex: none;
   width: 26px; height: 26px;

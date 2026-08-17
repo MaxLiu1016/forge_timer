@@ -3,7 +3,8 @@ import { store } from './store.js';
 import { Engine, buildTimeline } from './engine.js';
 import { initTimerUI, openSheet, closeSheets, fmt } from './ui-timer.js';
 import { initEditorUI } from './ui-editor.js';
-import { unlockAudio } from './feedback.js';
+import { unlockAudio, applyVolume, sfx, canVibrate, canSpeak } from './feedback.js';
+import { initSortable } from './drag-sort.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -71,11 +72,20 @@ go(['timer', 'edit', 'settings'].includes(location.hash.slice(1)) ? location.has
 function openWorkoutSheet() {
   const list = $('#workout-list');
   list.innerHTML = '';
+
+  // 課表列自成一個容器，排序才不會把下面那顆「編輯課表」也算成清單的一員
+  const rows = document.createElement('div');
+  rows.className = 'sort-rows';
+  list.appendChild(rows);
+
   store.data.workouts.forEach((w) => {
     const { total } = buildTimeline(w);
     const btn = document.createElement('button');
     btn.className = 'row-item' + (w.id === store.data.activeId ? ' is-active' : '');
     btn.innerHTML = `
+      <div class="sort-grip" aria-label="拖曳調整順序">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01"/></svg>
+      </div>
       <div class="r-main">
         <div class="r-title"></div>
         <div class="r-sub">${fmt(total)} ｜ ${w.exercises.length} 動作 × ${w.rounds} 輪</div>
@@ -90,7 +100,18 @@ function openWorkoutSheet() {
       closeSheets();
       toast(`已切換到「${w.name}」`);
     });
-    list.appendChild(btn);
+    rows.appendChild(btn);
+  });
+
+  initSortable({
+    list: rows,
+    scroller: list,
+    handle: '.sort-grip',
+    onDrop(from, to) {
+      store.moveWorkout(from, to);
+      openWorkoutSheet();   // 整份重畫，順序與「使用中」標記一次對齊
+      editorUI.render();    // 編輯頁那顆下拉選單也照同一個順序排
+    },
   });
 
   const edit = document.createElement('button');
@@ -119,6 +140,45 @@ Object.entries(prefMap).forEach(([sel, key]) => {
     if (key === 'sound' && box.checked) unlockAudio();
   });
 });
+
+// 音量滑桿
+const vol = $('#p-volume');
+const volVal = $('#p-volume-val');
+const syncVol = () => {
+  vol.value = store.prefs.volume ?? 80;
+  volVal.textContent = `${vol.value}%`;
+};
+syncVol();
+vol.addEventListener('input', () => {
+  store.prefs.volume = parseInt(vol.value, 10);
+  volVal.textContent = `${vol.value}%`;
+  applyVolume();
+});
+vol.addEventListener('change', () => store.savePrefs());
+$('#btn-test-sound').addEventListener('click', () => {
+  unlockAudio();
+  applyVolume();
+  sfx.goWork();
+});
+
+// 震動與語音是平台功能，不是每台裝置都有（iOS 就完全沒有震動 API）。
+// 不支援的時候把開關關掉並寫明原因，免得使用者一直以為是 App 壞了。
+function markUnsupported(sel, note) {
+  const box = $(sel);
+  const label = box.closest('.field-switch');
+  box.disabled = true;
+  box.checked = false;
+  label.classList.add('is-unsupported');
+  const span = label.querySelector('span');
+  if (!span.querySelector('.unsupported-note')) {
+    const n = document.createElement('small');
+    n.className = 'unsupported-note';
+    n.textContent = note;
+    span.appendChild(n);
+  }
+}
+if (!canVibrate) markUnsupported('#p-vibrate', '這台裝置或瀏覽器沒有震動 API（iOS 全系列都沒有）');
+if (!canSpeak) markUnsupported('#p-voice', '這個瀏覽器不支援語音合成');
 
 const light = $('#p-light');
 light.checked = store.prefs.theme === 'light';

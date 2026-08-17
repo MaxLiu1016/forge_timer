@@ -1,6 +1,6 @@
 // Service Worker：預先快取整個 App shell，離線可用
 // 改版時把 VERSION 加一，舊快取會自動清掉
-const VERSION = 'v9';
+const VERSION = 'v10';
 const CACHE = `forge-${VERSION}`;
 
 const ASSETS = [
@@ -12,6 +12,7 @@ const ASSETS = [
   './js/store.js',
   './js/engine.js',
   './js/feedback.js',
+  './js/drag-sort.js',
   './js/ui-timer.js',
   './js/ui-editor.js',
   './icons/icon-192.png',
