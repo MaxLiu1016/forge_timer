@@ -2,6 +2,7 @@
 import { store } from './store.js';
 
 let ctx = null;
+let master = null;
 
 /** 必須由使用者手勢觸發一次，否則 iOS 不給發聲 */
 export function unlockAudio() {
@@ -9,6 +10,17 @@ export function unlockAudio() {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     ctx = new AC();
+    // 所有聲音都走同一條 master，最後掛一顆壓縮器。
+    // 完成音那種四顆 oscillator 疊在一起的段落，音量開大就會破音，
+    // 有壓縮器擋著才能把整體拉響（運動時手機常常放在地上，離耳朵不近）。
+    master = ctx.createGain();
+    master.gain.value = 1;
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.setValueAtTime(-14, ctx.currentTime);
+    comp.ratio.setValueAtTime(12, ctx.currentTime);
+    comp.attack.setValueAtTime(0.003, ctx.currentTime);
+    comp.release.setValueAtTime(0.12, ctx.currentTime);
+    master.connect(comp).connect(ctx.destination);
   }
   if (ctx.state === 'suspended') ctx.resume();
   // 播一個無聲片段解鎖
@@ -29,25 +41,26 @@ function tone(freq, dur = 0.12, gain = 0.25, type = 'sine', delay = 0) {
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  osc.connect(g).connect(ctx.destination);
+  osc.connect(g).connect(master || ctx.destination);
   osc.start(t0);
   osc.stop(t0 + dur + 0.02);
 }
 
 export const sfx = {
-  countdown: () => tone(760, 0.1, 0.2, 'triangle'),          // 倒數 3-2-1
+  countdownSoft: () => tone(560, 0.09, 0.34, 'triangle'),     // 倒數 5-4：先預告，音高低一點
+  countdown: () => tone(780, 0.12, 0.52, 'triangle'),         // 倒數 3-2-1：拉高拉響
   goWork: () => {                                            // 開始操
-    tone(520, 0.14, 0.28, 'square');
-    tone(880, 0.28, 0.28, 'square', 0.13);
+    tone(520, 0.16, 0.6, 'square');
+    tone(880, 0.32, 0.6, 'square', 0.13);
   },
   goRest: () => {                                            // 進入休息
-    tone(660, 0.16, 0.22, 'sine');
-    tone(440, 0.3, 0.22, 'sine', 0.15);
+    tone(660, 0.18, 0.45, 'sine');
+    tone(440, 0.34, 0.45, 'sine', 0.15);
   },
   finish: () => {
-    [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.3, 0.26, 'triangle', i * 0.14));
+    [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.32, 0.55, 'triangle', i * 0.14));
   },
-  tap: () => tone(320, 0.05, 0.12, 'sine'),
+  tap: () => tone(320, 0.05, 0.18, 'sine'),
 };
 
 export function buzz(pattern) {

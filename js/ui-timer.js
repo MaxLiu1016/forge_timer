@@ -128,11 +128,16 @@ export function initTimerUI(engine, { onOpenWorkouts }) {
     }
   });
 
+  // 倒數從 5 秒就開始提示：5-4 先用低一點的短音預告，3-2-1 才是那三聲重的
   engine.addEventListener('second', (e) => {
     const { secondsLeft } = e.detail;
-    if (secondsLeft <= 3 && secondsLeft >= 1) {
+    if (secondsLeft > 5 || secondsLeft < 1) return;
+    if (secondsLeft <= 3) {
       sfx.countdown();
       buzz(35);
+    } else {
+      sfx.countdownSoft();
+      buzz(18);
     }
   });
 
@@ -173,7 +178,7 @@ export function initTimerUI(engine, { onOpenWorkouts }) {
     const phase = done ? 'done' : seg.kind;
 
     el.body.dataset.phase = phase;
-    el.body.classList.toggle('is-urgent', engine.running && cur.remaining <= 3.2 && cur.remaining > 0);
+    el.body.classList.toggle('is-urgent', engine.running && cur.remaining <= 5.2 && cur.remaining > 0);
 
     el.phase.textContent = done ? '完成' : PHASE_TEXT[seg.kind];
     el.time.textContent = done ? '✓' : bigTime(cur.remaining);
